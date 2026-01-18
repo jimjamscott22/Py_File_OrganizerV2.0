@@ -49,9 +49,13 @@ class FileOrganizerApp:
                 with self.config_path.open("r", encoding="utf-8") as f:
                     data = json.load(f)
                 if isinstance(data, dict):
+                    # Load theme preference if present
+                    if "_theme" in data:
+                        self.theme = data["_theme"]
+                    # Load folders
                     cleaned = {}
                     for name, exts in data.items():
-                        if not isinstance(name, str) or not isinstance(exts, list):
+                        if name == "_theme" or not isinstance(name, str) or not isinstance(exts, list):
                             continue
                         cleaned[name] = self._normalize_extensions(exts)
                     if cleaned:
@@ -64,9 +68,10 @@ class FileOrganizerApp:
     def save_folders_config(self):
         try:
             payload = {name: sorted(exts) for name, exts in self.folders.items()}
+            payload["_theme"] = self.theme
             with self.config_path.open("w", encoding="utf-8") as f:
                 json.dump(payload, f, indent=2)
-            self.log_message("Saved categories to folders_config.json")
+            self.log_message("Saved categories and theme to folders_config.json")
         except Exception as e:
             self.log_message(f"Could not save config: {e}")
     
@@ -270,6 +275,7 @@ class FileOrganizerApp:
     def toggle_theme(self):
         theme = "dark" if self.dark_mode_var.get() else "light"
         self.apply_theme(theme)
+        self.save_folders_config()
 
     def refresh_category_list(self):
         self.categories_listbox.delete(0, tk.END)
