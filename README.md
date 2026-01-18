@@ -2,7 +2,7 @@
 
 A lightweight graphical desktop application that automatically organizes files in a selected directory by file type. Designed to reduce clutter and restore sanity to chaotic folders like **Downloads**.
 
-Built with Python and Tkinter, this tool is fast, simple, and dependency‑free.
+Built with Python and Tkinter, this tool is extremely fast, it's simple, and dependency‑free.
 
 ---
 
