@@ -67,7 +67,7 @@ class FileOrganizerApp:
 
     def save_folders_config(self):
         try:
-            payload = {name: sorted(exts) for name, exts in self.folders.items()}
+            payload: dict = {name: sorted(exts) for name, exts in self.folders.items()}
             payload["_theme"] = self.theme
             with self.config_path.open("w", encoding="utf-8") as f:
                 json.dump(payload, f, indent=2)
@@ -127,7 +127,7 @@ class FileOrganizerApp:
     def setup_ui(self):
         # Main frame
         main_frame = ttk.Frame(self.root, padding="16 14 16 16", style="Main.TFrame")
-        main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        main_frame.grid(row=0, column=0, sticky=tk.W+tk.E+tk.N+tk.S)
         
         # Configure grid weights
         self.root.columnconfigure(0, weight=1)
@@ -147,14 +147,14 @@ class FileOrganizerApp:
         
         self.folder_var = tk.StringVar(value=str(Path.home() / "Downloads"))
         folder_entry = ttk.Entry(main_frame, textvariable=self.folder_var, width=50)
-        folder_entry.grid(row=1, column=1, sticky=(tk.W, tk.E), padx=(10, 5), pady=5)
+        folder_entry.grid(row=1, column=1, sticky=tk.W+tk.E, padx=(10, 5), pady=5)
         
         browse_btn = ttk.Button(main_frame, text="Browse...", command=self.browse_folder)
         browse_btn.grid(row=1, column=2, padx=(5, 0), pady=5)
         
         # Options frame
         options_frame = ttk.LabelFrame(main_frame, text="Options", padding="12", style="Card.TLabelframe")
-        options_frame.grid(row=2, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=10)
+        options_frame.grid(row=2, column=0, columnspan=3, sticky=tk.W+tk.E, pady=10)
         options_frame.columnconfigure(0, weight=1)
         
         # Checkbox variables
@@ -174,31 +174,31 @@ class FileOrganizerApp:
         
         # Categories frame
         categories_frame = ttk.LabelFrame(main_frame, text="Categories", padding="12", style="Card.TLabelframe")
-        categories_frame.grid(row=3, column=0, columnspan=3, sticky=(tk.W, tk.E, tk.N, tk.S), pady=10)
+        categories_frame.grid(row=3, column=0, columnspan=3, sticky=tk.W+tk.E+tk.N+tk.S, pady=10)
         categories_frame.columnconfigure(0, weight=1)
         categories_frame.columnconfigure(1, weight=1)
         categories_frame.columnconfigure(2, weight=1)
         categories_frame.rowconfigure(0, weight=1)
         
         listbox_frame = ttk.Frame(categories_frame)
-        listbox_frame.grid(row=0, column=0, rowspan=3, sticky=(tk.N, tk.S, tk.E, tk.W), padx=(0, 10))
+        listbox_frame.grid(row=0, column=0, rowspan=3, sticky=tk.N+tk.S+tk.E+tk.W, padx=(0, 10))
         listbox_frame.columnconfigure(0, weight=1)
         listbox_frame.rowconfigure(0, weight=1)
 
         self.categories_listbox = tk.Listbox(listbox_frame, height=8, exportselection=False)
-        self.categories_listbox.grid(row=0, column=0, sticky=(tk.N, tk.S, tk.E, tk.W))
+        self.categories_listbox.grid(row=0, column=0, sticky=tk.N+tk.S+tk.E+tk.W)
         cat_scroll = ttk.Scrollbar(listbox_frame, orient=tk.VERTICAL, command=self.categories_listbox.yview)
-        cat_scroll.grid(row=0, column=1, sticky=(tk.N, tk.S))
+        cat_scroll.grid(row=0, column=1, sticky=tk.N+tk.S)
         self.categories_listbox.configure(yscrollcommand=cat_scroll.set)
         self.categories_listbox.bind("<<ListboxSelect>>", self.on_category_select)
 
         ttk.Label(categories_frame, text="Category name").grid(row=0, column=1, sticky=tk.W)
         category_entry = ttk.Entry(categories_frame, textvariable=self.category_var)
-        category_entry.grid(row=0, column=2, sticky=(tk.W, tk.E))
+        category_entry.grid(row=0, column=2, sticky=tk.W+tk.E)
 
         ttk.Label(categories_frame, text="Extensions (comma-separated)").grid(row=1, column=1, sticky=tk.W, pady=(6, 0))
         ext_entry = ttk.Entry(categories_frame, textvariable=self.extensions_var)
-        ext_entry.grid(row=1, column=2, sticky=(tk.W, tk.E))
+        ext_entry.grid(row=1, column=2, sticky=tk.W+tk.E)
 
         cat_buttons = ttk.Frame(categories_frame)
         cat_buttons.grid(row=2, column=1, columnspan=2, sticky=tk.W, pady=(8, 0))
@@ -209,7 +209,7 @@ class FileOrganizerApp:
 
         # Progress and log area
         progress_frame = ttk.LabelFrame(main_frame, text="Progress", padding="12", style="Card.TLabelframe")
-        progress_frame.grid(row=4, column=0, columnspan=3, sticky=(tk.W, tk.E, tk.N, tk.S), pady=10)
+        progress_frame.grid(row=4, column=0, columnspan=3, sticky=tk.W+tk.E+tk.N+tk.S, pady=10)
         progress_frame.columnconfigure(0, weight=1)
         progress_frame.rowconfigure(0, weight=1)
         
@@ -218,13 +218,13 @@ class FileOrganizerApp:
         scrollbar = ttk.Scrollbar(progress_frame, orient=tk.VERTICAL, command=self.log_text.yview)
         self.log_text.configure(yscrollcommand=scrollbar.set)
         
-        self.log_text.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
-        scrollbar.grid(row=0, column=1, sticky=(tk.N, tk.S))
+        self.log_text.grid(row=0, column=0, sticky=tk.W+tk.E+tk.N+tk.S)
+        scrollbar.grid(row=0, column=1, sticky=tk.N+tk.S)
 
         # Progress bar
         self.progress_var = tk.DoubleVar(value=0)
         self.progress_bar = ttk.Progressbar(progress_frame, variable=self.progress_var, maximum=100, style="Accent.Horizontal.TProgressbar")
-        self.progress_bar.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=(8, 0))
+        self.progress_bar.grid(row=1, column=0, sticky=tk.W+tk.E, pady=(8, 0))
         
         # Buttons frame
         button_frame = ttk.Frame(main_frame, style="Main.TFrame")
@@ -243,7 +243,7 @@ class FileOrganizerApp:
         # Status bar
         self.status_var = tk.StringVar(value="Ready")
         status_bar = ttk.Label(main_frame, textvariable=self.status_var, relief=tk.SUNKEN)
-        status_bar.grid(row=6, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=(10, 0))
+        status_bar.grid(row=6, column=0, columnspan=3, sticky=tk.W+tk.E, pady=(10, 0))
         
         # Configure row weights for resizing
         main_frame.rowconfigure(3, weight=1)
