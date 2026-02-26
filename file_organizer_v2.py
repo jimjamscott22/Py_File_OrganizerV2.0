@@ -1,6 +1,6 @@
 import os
 import json
-import shutil
+import sys
 from pathlib import Path
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
@@ -14,7 +14,7 @@ class FileOrganizerApp:
         self.root.resizable(True, True)
         self.accent_color = "#4f8ef7"
         self.theme = "light"
-        self.config_path = Path(__file__).with_name("folders_config.json")
+        self.config_path = self._get_config_path()
         self.default_folders = {
             "images": ["jpg", "jpeg", "png", "gif", "bmp", "tiff", "webp"],
             "documents": ["txt", "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx"],
@@ -29,6 +29,17 @@ class FileOrganizerApp:
         self.apply_style()
         self.setup_ui()
         self.apply_theme(self.theme)
+
+    def _get_config_path(self):
+        if getattr(sys, "frozen", False):
+            appdata = os.getenv("APPDATA")
+            if appdata:
+                base = Path(appdata) / "FileOrganizer"
+            else:
+                base = Path.home() / ".config" / "FileOrganizer"
+            base.mkdir(parents=True, exist_ok=True)
+            return base / "folders_config.json"
+        return Path(__file__).with_name("folders_config.json")
         
     def _normalize_extensions(self, extensions):
         cleaned = []
@@ -71,7 +82,7 @@ class FileOrganizerApp:
             payload["_theme"] = self.theme
             with self.config_path.open("w", encoding="utf-8") as f:
                 json.dump(payload, f, indent=2)
-            self.log_message("Saved categories and theme to folders_config.json")
+            self.log_message(f"Saved categories and theme to {self.config_path}")
         except Exception as e:
             self.log_message(f"Could not save config: {e}")
     

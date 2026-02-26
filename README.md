@@ -67,7 +67,7 @@ No additional dependencies are required.
 ## ▶️ Usage
 
 ```bash
-python file_organizer.py
+python file_organizer_v2.py
 ```
 
 ### Steps
@@ -107,6 +107,36 @@ folders = {
 ---
 
 ## 🛠️ Troubleshooting
+
+## 📦 Bundle with PyInstaller
+
+Install PyInstaller in your virtual environment:
+
+```bash
+python -m pip install pyinstaller
+```
+
+Create a single-file desktop executable:
+
+```bash
+pyinstaller --noconfirm --clean --windowed --onefile --name FileOrganizer file_organizer_v2.py
+```
+
+Windows shortcut (uses local venv by default):
+
+```powershell
+.\build_windows.ps1
+```
+
+Output location:
+
+- Windows: `dist/FileOrganizer.exe`
+- macOS/Linux: `dist/FileOrganizer`
+
+Notes:
+
+- Keep running from the same executable path so app settings stay in your user config folder.
+- Build artifacts are written to `build/` and `dist/`.
 
 ### Tkinter Not Installed (Linux)
 
