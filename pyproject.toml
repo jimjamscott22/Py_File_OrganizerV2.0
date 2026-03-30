@@ -1,0 +1,16 @@
+[project]
+name = "py-file-organizer"
+version = "2.0.0"
+description = "A Tkinter-based GUI app for organizing files by type into categorized subfolders"
+requires-python = ">=3.6"
+dependencies = []
+
+[project.scripts]
+file-organizer = "file_organizer_v2:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/file_organizer_v2.py"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
