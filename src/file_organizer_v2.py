@@ -171,6 +171,7 @@ class FileOrganizerApp:
         # Checkbox variables
         self.create_folders_var = tk.BooleanVar(value=True)
         self.include_hidden_var = tk.BooleanVar(value=False)
+        self.recursive_var = tk.BooleanVar(value=False)
         self.backup_first_var = tk.BooleanVar(value=False)
         self.dark_mode_var = tk.BooleanVar(value=self.theme == "dark")
         
@@ -178,10 +179,12 @@ class FileOrganizerApp:
                        variable=self.create_folders_var).grid(row=0, column=0, sticky=tk.W)
         ttk.Checkbutton(options_frame, text="Include hidden files", 
                        variable=self.include_hidden_var).grid(row=1, column=0, sticky=tk.W)
+        ttk.Checkbutton(options_frame, text="Organize subfolders recursively (find files in nested folders)", 
+                       variable=self.recursive_var).grid(row=2, column=0, sticky=tk.W)
         ttk.Checkbutton(options_frame, text="Preview (no changes)", 
-                       variable=self.backup_first_var).grid(row=2, column=0, sticky=tk.W)
+                       variable=self.backup_first_var).grid(row=3, column=0, sticky=tk.W)
         ttk.Checkbutton(options_frame, text="Dark mode", 
-                       variable=self.dark_mode_var, command=self.toggle_theme).grid(row=3, column=0, sticky=tk.W)
+                       variable=self.dark_mode_var, command=self.toggle_theme).grid(row=4, column=0, sticky=tk.W)
         
         # Categories frame
         categories_frame = ttk.LabelFrame(main_frame, text="Categories", padding="12", style="Card.TLabelframe")
@@ -361,6 +364,34 @@ class FileOrganizerApp:
             if not candidate.exists():
                 return candidate
             counter += 1
+
+    def _collect_files_to_organize(self, base_folder: Path):
+        """Files to process: top-level only, or all nested files except under category/others folders."""
+        skip_roots = set(self.folders.keys()) | {"others"}
+        include_hidden = self.include_hidden_var.get()
+
+        def include_file(path: Path) -> bool:
+            if path.name.startswith(".") and not include_hidden:
+                return False
+            return True
+
+        if not self.recursive_var.get():
+            return [p for p in base_folder.iterdir() if p.is_file() and include_file(p)]
+
+        out = []
+        for path in base_folder.rglob("*"):
+            if not path.is_file():
+                continue
+            if not include_file(path):
+                continue
+            try:
+                rel = path.relative_to(base_folder)
+            except ValueError:
+                continue
+            if rel.parts and rel.parts[0] in skip_roots:
+                continue
+            out.append(path)
+        return out
     
     def clear_log(self):
         self.log_text.delete(1.0, tk.END)
@@ -374,11 +405,10 @@ class FileOrganizerApp:
                 self.set_status("Error occurred")
                 return
             
-            self.log_message(f"Starting organization of: {base_folder}")
+            mode = "recursive" if self.recursive_var.get() else "top-level only"
+            self.log_message(f"Starting organization of: {base_folder} ({mode})")
             
-            # Count total files
-            all_files = [item for item in base_folder.iterdir() 
-                        if item.is_file() and not (item.name.startswith('.') and not self.include_hidden_var.get())]
+            all_files = self._collect_files_to_organize(base_folder)
             
             total_files = len(all_files)
             processed_files = 0
@@ -393,52 +423,52 @@ class FileOrganizerApp:
             self.update_progress(0, total_files)
             
             for item in all_files:
-                if item.is_file():
-                    ext = item.suffix.lower().lstrip('.')
-                    moved = False
-                    
-                    # Determine which category folder to use
-                    for folder, ext_list in self.folders.items():
-                        if ext in ext_list:
-                            dest_dir = base_folder / folder
-                            if self.create_folders_var.get():
-                                dest_dir.mkdir(exist_ok=True)
-                            
-                            if dest_dir.exists():
-                                target_path = self._unique_destination(dest_dir, item.name)
-                                if self.backup_first_var.get():
-                                    self.log_message(f"[PREVIEW] {item.name} → {target_path.relative_to(base_folder)}")
-                                    moved = True
-                                else:
-                                    try:
-                                        item.rename(target_path)
-                                        self.log_message(f"Moved: {item.name} → {target_path.relative_to(base_folder)}")
-                                        moved = True
-                                    except Exception as e:
-                                        self.log_message(f"Error moving {item.name}: {str(e)}")
-                                        moved = True
-                            else:
-                                self.log_message(f"Destination folder doesn't exist: {dest_dir}")
-                            break
-                    
-                    # If extension didn't match any category, move to "others"
-                    if not moved:
-                        dest_dir = base_folder / "others"
+                src_label = str(item.relative_to(base_folder))
+                ext = item.suffix.lower().lstrip('.')
+                moved = False
+                
+                # Determine which category folder to use
+                for folder, ext_list in self.folders.items():
+                    if ext in ext_list:
+                        dest_dir = base_folder / folder
                         if self.create_folders_var.get():
                             dest_dir.mkdir(exist_ok=True)
                         
                         if dest_dir.exists():
                             target_path = self._unique_destination(dest_dir, item.name)
                             if self.backup_first_var.get():
-                                self.log_message(f"[PREVIEW] {item.name} → {target_path.relative_to(base_folder)}")
+                                self.log_message(f"[PREVIEW] {src_label} → {target_path.relative_to(base_folder)}")
+                                moved = True
                             else:
                                 try:
                                     item.rename(target_path)
-                                    self.log_message(f"Moved: {item.name} → {target_path.relative_to(base_folder)}")
+                                    self.log_message(f"Moved: {src_label} → {target_path.relative_to(base_folder)}")
+                                    moved = True
                                 except Exception as e:
-                                    self.log_message(f"Error moving {item.name}: {str(e)}")
+                                    self.log_message(f"Error moving {src_label}: {str(e)}")
+                                    moved = True
                         else:
                             self.log_message(f"Destination folder doesn't exist: {dest_dir}")
+                        break
+                
+                # If extension didn't match any category, move to "others"
+                if not moved:
+                    dest_dir = base_folder / "others"
+                    if self.create_folders_var.get():
+                        dest_dir.mkdir(exist_ok=True)
+                    
+                    if dest_dir.exists():
+                        target_path = self._unique_destination(dest_dir, item.name)
+                        if self.backup_first_var.get():
+                            self.log_message(f"[PREVIEW] {src_label} → {target_path.relative_to(base_folder)}")
+                        else:
+                            try:
+                                item.rename(target_path)
+                                self.log_message(f"Moved: {src_label} → {target_path.relative_to(base_folder)}")
+                            except Exception as e:
+                                self.log_message(f"Error moving {src_label}: {str(e)}")
+                    else:
+                        self.log_message(f"Destination folder doesn't exist: {dest_dir}")
                     
                     processed_files += 1
                     self.update_progress(processed_files, total_files)
