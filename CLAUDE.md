@@ -27,7 +27,7 @@ The entire application is a single file: `file_organizer_v2.py`.
 
 **Configuration persistence** (`folders_config.json`): a JSON dict where keys are category names mapped to extension lists, plus a reserved `"_theme"` key for the light/dark preference. Saved automatically on every category add/update/delete and theme toggle.
 
-**File organization flow** (`organize_files`): runs on a daemon thread (started by `start_organization`). Iterates top-level files only (not recursive), matches extensions to categories, moves files into subfolders. Unrecognized extensions go to `others/`. Uses `_unique_destination()` to avoid overwriting files with the same name. The "Preview" checkbox (`backup_first_var`) enables dry-run mode — logs moves without executing them.
+**File organization flow** (`organize_files`): runs on a daemon thread (started by `start_organization`). Uses `_collect_files_to_organize()` to gather files — either top-level only (default) or recursively via `rglob()` when the "Organize subfolders recursively" checkbox is enabled. Recursion skips paths whose first segment is a category name or `others`, preventing re-processing already-organized files. Matches extensions to categories and moves files into subfolders. Unrecognized extensions go to `others/`. Uses `_unique_destination()` to avoid overwriting files with the same name. The "Preview" checkbox (`backup_first_var`) enables dry-run mode — logs moves without executing them. Relative paths are logged for clarity when processing nested files.
 
 **UI threading**: all UI updates from the worker thread go through `self.root.after(0, ...)` to stay on the main thread.
 
