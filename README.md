@@ -67,7 +67,7 @@ No additional dependencies are required.
 ## ▶️ Usage
 
 ```bash
-python file_organizer_v2.py
+ uv run python file_organizer_v2.py
 ```
 
 ### Steps
